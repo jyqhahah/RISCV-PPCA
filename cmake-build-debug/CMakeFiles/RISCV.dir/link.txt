@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/RISCV.dir/main.cpp.o  -o RISCV 
