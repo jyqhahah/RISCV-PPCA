@@ -9,7 +9,7 @@
 using namespace std;
 int main() {
     read _read;
-    freopen("queens.data", "r" ,stdin);
+    freopen("expr.data", "r" ,stdin);
     memset(mem, 0, sizeof(mem));
     _read.Read();
     Reg[0] = 0;
@@ -17,10 +17,6 @@ int main() {
        // cout  <<"while pc " << pc << endl;
         uint32_t code=0;
         _read.fetch(code);
-        if(pc == 4188) {
-            int x;
-            cin>>x;
-        }
       //  cout <<"if " << hex <<' ' <<code << endl;
         if(code == 0x00c68223) break;
         //if(code == 0x000180a9) break;
