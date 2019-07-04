@@ -150,7 +150,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=RISCV
+CMAKE_PROJECT_NAME:STATIC=code
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/usr/bin/ranlib
@@ -222,6 +222,12 @@ RISCV_BINARY_DIR:STATIC=/home/jiayuqi/CLionProjects/RISCV/cmake-build-debug
 
 //Value Computed by CMake
 RISCV_SOURCE_DIR:STATIC=/home/jiayuqi/CLionProjects/RISCV
+
+//Value Computed by CMake
+code_BINARY_DIR:STATIC=/home/jiayuqi/CLionProjects/RISCV/cmake-build-debug
+
+//Value Computed by CMake
+code_SOURCE_DIR:STATIC=/home/jiayuqi/CLionProjects/RISCV
 
 
 ########################
