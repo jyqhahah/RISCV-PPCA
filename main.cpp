@@ -9,7 +9,7 @@
 using namespace std;
 int main() {
     read _read;
-    freopen("expr.data", "r" ,stdin);
+    //freopen("expr.data", "r" ,stdin);
     memset(mem, 0, sizeof(mem));
     _read.Read();
     Reg[0] = 0;
