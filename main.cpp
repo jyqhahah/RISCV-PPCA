@@ -9,7 +9,6 @@
 using namespace std;
 int main() {
     read _read;
-    freopen("pi.data", "r" ,stdin);
     memset(mem, 0, sizeof(mem));
     _read.Read();
     decoder _dec;

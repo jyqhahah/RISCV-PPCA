@@ -81,7 +81,7 @@ namespace SJTU_JYQ{
     struct MEM_WB{
         instruction inst;
         int ALUOutput;
-        int avail, isNext;
+        int avail, isNext, free;
     };
 }
 #endif //RISCV_PARSER_HPP
