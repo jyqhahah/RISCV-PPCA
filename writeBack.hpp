@@ -11,31 +11,17 @@
 using namespace SJTU_JYQ;
 class writeBack{
 public:
-    instruction in;
-    writeBack (instruction in) : in(in){}
-    void write(){
-        int check = 1;
-        switch(in.inst){
-            case SB:{
-                uint8_t tmp = Reg[in.rs2];
-                memcpy(mem + Reg[in.rs1] + in.imm, &tmp, 1);
+    void write(MEM_WB &mem_wb){
+        if(!mem_wb.avail || !mem_wb.isNext) return;
+        switch (mem_wb.inst.type){
+            case S_TYPE:case SB_TYPE:
+                break;
+            default: {
+                Reg[mem_wb.inst.rd] = mem_wb.ALUOutput;
                 break;
             }
-            case SH:{
-                uint16_t tmp = Reg[in.rs2];
-                memcpy(mem + Reg[in.rs1] + in.imm, &tmp, 2);
-                break;
-            }
-            case SW:{
-                memcpy(mem + Reg[in.rs1] + in.imm, &Reg[in.rs2], 4);
-                //
-                break;
-            }
-            default:
-                check = 0;
-                break;
         }
-        if(check) pc = pc + 4;
+        mem_wb.isNext = 0;
     }
 };
 #endif //RISCV_WRITEBACK_HPP

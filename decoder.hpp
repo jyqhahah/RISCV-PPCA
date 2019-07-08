@@ -7,19 +7,13 @@
 #include <cstring>
 #include <iostream>
 using namespace SJTU_JYQ;
-//inst A(reg, &pc);
 class decoder{
 public:
-    uint32_t _inst;
-    decoder(uint32_t _inst):_inst(_inst){}
-    int funct = (_inst >> 12) & 0x7, opcode = _inst & 0x7f;
-    int rd = (_inst >> 7) & 0x1f;
-    int rs1 = (_inst >> 15) & 0x1f;
-    int rs2 = (_inst >> 20) & 0x1f;
-
-    //inst(int *x, int *y) : ptr_reg(x), ptr_pc(y) {}
-
-    instruction get_inst() {
+    instruction get_inst(uint32_t _inst) {
+        int funct = (_inst >> 12) & 0x7, opcode = _inst & 0x7f;
+        int rd = (_inst >> 7) & 0x1f;
+        int rs1 = (_inst >> 15) & 0x1f;
+        int rs2 = (_inst >> 20) & 0x1f;
         switch (opcode) {
             case 0x37:
                 return instruction(LUI, U_TYPE);
@@ -120,40 +114,7 @@ public:
         }
     }
 
-/*    int get_imm1(InstType t) {
-        switch (t) {
-            case R_TYPE:
-                break;
-            case I_TYPE: {
-                int tmp_31 = _inst >> 31, tmp_30_20 = (_inst >> 20) & 0x7ff;
-                if (tmp_31 == 1) return ((-1) << 11) | tmp_30_20;
-                else return tmp_30_20;
-            }
-            case S_TYPE: {
-                int tmp_31 = _inst >> 31, tmp_30_25 = (_inst >> 25) & 0x3f, tmp_11_7 = (_inst >> 7) & 0x1f;
-                if (tmp_31 == 1) return ((-1) << 11) | (tmp_30_25 << 5) | tmp_11_7;
-                else return (tmp_30_25 << 5) | tmp_11_7;
-            }
-            case SB_TYPE: {
-                int tmp_31 = _inst >> 31, tmp_30_25 = (_inst >> 25) & 0x3f, tmp_11_8 = (_inst >> 8) & 0xf, tmp_7 =
-                        (_inst >> 7) & 0x1;
-                if (tmp_31 == 1) return ((-1) << 12) | (tmp_7 << 11) | (tmp_30_25 << 5) | (tmp_11_8 << 1) | 0x0;
-                else return (tmp_7 << 11) | (tmp_30_25 << 5) | (tmp_11_8 << 1) | 0x0;
-            }
-            case U_TYPE:
-                return (_inst >> 12) << 12;
-            case UJ_TYPE: {
-                int imm;
-                int tmp_31 = _inst >> 31, tmp_30_21 = (_inst >> 21) & 0x3ff, tmp_20 = (_inst >> 20) & 0x1, tmp_19_12 =
-                        (_inst >> 12) & 0xff;
-                if (tmp_31 == 1) return (((-1) << 20) | (tmp_19_12 << 12) | (tmp_20 << 11) | (tmp_30_21 << 1))<<1;
-                else return (tmp_19_12 << 12) | (tmp_20 << 11) | (tmp_30_21 << 1);
-            }
-        }
-    }
-    */
-
-    int get_imm(InstType t){
+    int get_imm(InstType t, uint32_t _inst){
         switch(t){
             case U_TYPE: {
                 int tmp = _inst;
@@ -189,14 +150,96 @@ public:
         }
     }
 
-    instruction decode() {
+    void decode(IF_ID &if_id, ID_EX &id_ex, EX_MEM &ex_mem, MEM_WB &mem_wb){
+        static bool pause = false;
+        if(pause && !ex_mem.isNext && !mem_wb.isNext){
+            if_id.avail = if_id.isNext = 1;
+            id_ex.avail = id_ex.isNext = 1;
+            pause = false;
+        }
+        if(!if_id.isNext || !id_ex.avail || !id_ex.free) return;
+        //std::cout<<"decoder "<<std::dec<<if_id.inst.inst_32<<std::endl;
+        if_id.isNext = 0;
+        uint32_t _inst = if_id.inst.inst_32;
         instruction tmp;
-        tmp = get_inst();
-        tmp.imm = get_imm(tmp.type);
-        tmp.rd = rd;
-        tmp.rs1 = rs1;
-        tmp.rs2 = rs2;
-        return tmp;
+        tmp = get_inst(_inst);
+        tmp.inst_32 = _inst;
+        id_ex.inst.type = tmp.type;
+        id_ex.inst.inst = tmp.inst;
+        id_ex.inst.inst_32 = tmp.inst_32;
+        int funct = (_inst >> 12) & 0x7, opcode = _inst & 0x7f;
+        int rd = (_inst >> 7) & 0x1f;
+        int rs1 = (_inst >> 15) & 0x1f;
+        int rs2 = (_inst >> 20) & 0x1f;
+        id_ex.NPC = if_id.NPC;
+        switch(id_ex.inst.type){
+            case U_TYPE:
+            case UJ_TYPE:id_ex.inst.rd = rd;id_ex.inst.imm = get_imm(id_ex.inst.type,_inst);break;
+            case R_TYPE:{
+                id_ex.inst.rs1 = rs1;
+                id_ex.inst.rs2 = rs2;
+                if((ex_mem.isNext&&(ex_mem.inst.rd == id_ex.inst.rs1 || ex_mem.inst.rd == id_ex.inst.rs2))||
+                   (mem_wb.isNext&&(mem_wb.inst.rd == id_ex.inst.rs1 || mem_wb.inst.rd == id_ex.inst.rs2))){
+                    if_id.avail = id_ex.avail = 0;
+                    pause = true;
+                    return;
+                }
+                id_ex.reg_rs1 = Reg[id_ex.inst.rs1];
+                id_ex.reg_rs2 = Reg[id_ex.inst.rs2];
+                id_ex.inst.rd = rd;
+                if_id.avail = id_ex.avail = 1;
+                pause = false;
+                break;
+            }
+            case S_TYPE:{
+                id_ex.inst.rs1 = rs1;
+                id_ex.inst.rs2 = rs2;
+                if((ex_mem.isNext&&(ex_mem.inst.rd == id_ex.inst.rs1 || ex_mem.inst.rd == id_ex.inst.rs2))||
+                   (mem_wb.isNext&&(mem_wb.inst.rd == id_ex.inst.rs1 || mem_wb.inst.rd == id_ex.inst.rs2))){
+                    if_id.avail = id_ex.avail = 0;
+                    pause = true;
+                    return;
+                }
+                id_ex.reg_rs1 = Reg[id_ex.inst.rs1];
+                id_ex.reg_rs2 = Reg[id_ex.inst.rs2];
+                id_ex.inst.imm = get_imm(id_ex.inst.type,_inst);
+                if_id.avail = id_ex.avail = 1;
+                pause = false;
+                break;
+            }
+            case SB_TYPE:{
+                id_ex.inst.rs1 = rs1;
+                id_ex.inst.rs2 = rs2;
+                id_ex.inst.imm = get_imm(id_ex.inst.type,_inst);
+                if((ex_mem.isNext&&(ex_mem.inst.rd == id_ex.inst.rs1 || ex_mem.inst.rd == id_ex.inst.rs2))||
+                   (mem_wb.isNext&&(mem_wb.inst.rd == id_ex.inst.rs1 || mem_wb.inst.rd == id_ex.inst.rs2))){
+                    if_id.avail = id_ex.avail = 0;
+                    pause = true;
+                    return;
+                }
+                id_ex.reg_rs1 = Reg[id_ex.inst.rs1];
+                id_ex.reg_rs2 = Reg[id_ex.inst.rs2];
+                if_id.avail = id_ex.avail = 1;
+                pause = false;
+                break;
+            }
+            default:{
+                id_ex.inst.rs1 = rs1;
+                id_ex.inst.imm = get_imm(id_ex.inst.type,_inst);
+                if((ex_mem.isNext&&ex_mem.inst.rd == id_ex.inst.rs1)||
+                   (mem_wb.isNext&&mem_wb.inst.rd == id_ex.inst.rs1)){
+                    if_id.avail = id_ex.avail = 0;
+                    pause = true;
+                    return;
+                }
+                id_ex.reg_rs1 = Reg[id_ex.inst.rs1];
+                id_ex.inst.rd = rd;
+                if_id.avail = id_ex.avail = 1;
+                pause = false;
+                break;
+            }
+        }
+        id_ex.isNext = 1;
     }
 };
 #endif //RISCV_INST_HPP

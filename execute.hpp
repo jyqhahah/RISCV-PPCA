@@ -11,65 +11,208 @@ using namespace std;
 using namespace SJTU_JYQ;
 class execute{
 public:
-    instruction in;
-    int _inst;
-    execute(instruction in) : in(in){}
-    void JUMP_inst(){
-        switch(in.inst){
+    void JUMP_inst(IF_ID &if_id, ID_EX &id_ex, EX_MEM &ex_mem){
+        switch(id_ex.inst.inst){
             case JAL:{
-                Reg[in.rd] = pc+4;
-                pc = pc + in.imm;
+                ex_mem.inst.rd = id_ex.inst.rd;
+                ex_mem.ALUOutput = id_ex.NPC + 4;
+                pc = id_ex.NPC + id_ex.inst.imm;
+                if_id.isNext = 0;
                 break;
             }
             case JALR:{
-                Reg[in.rd] = pc+4;
-                pc = (Reg[in.rs1] + in.imm)&(-2);
+                ex_mem.inst.rd = id_ex.inst.rd;
+                ex_mem.ALUOutput = id_ex.NPC + 4;
+                pc = (id_ex.reg_rs1 + id_ex.inst.imm) & (-2);
+                if_id.isNext = 0;
                 break;
             }
             case BEQ: {
-                if (Reg[in.rs1] == Reg[in.rs2]){
-                    pc = pc + in.imm;
+                bool willJump = id_ex.reg_rs1 == id_ex.reg_rs2;
+                if (willJump){
+                    pc = id_ex.NPC + id_ex.inst.imm;
+                    if_id.isNext = 0;
                 }
-                else pc = pc + 4;
+                //else pc = id_ex.NPC + 4;
                 break;
             }
             case BNE:{
-                if(Reg[in.rs1] != Reg[in.rs2]) {
-                    pc = pc + in.imm;
+                bool willJump = id_ex.reg_rs1 != id_ex.reg_rs2;
+                if(willJump) {
+                    pc = id_ex.NPC + id_ex.inst.imm;
+                    if_id.isNext = 0;
                 }
-                else pc = pc + 4;
+                //else pc = id_ex.NPC + 4;
                 break;
             }
             case BLT:{
-                if(Reg[in.rs1] < Reg[in.rs2]) {
-                    pc = pc + in.imm;
+                bool willJump = id_ex.reg_rs1 < id_ex.reg_rs2;
+                if(willJump) {
+                    pc = id_ex.NPC + id_ex.inst.imm;
+                    if_id.isNext = 0;
                 }
-                else pc = pc + 4;
+                //else pc = id_ex.NPC + 4;
                 break;
             }
             case BGE:{
-                if(Reg[in.rs1] >= Reg[in.rs2]) {
-                    pc = pc + in.imm;
+                bool willJump = id_ex.reg_rs1 >= id_ex.reg_rs2;
+                if(willJump) {
+                    pc = id_ex.NPC + id_ex.inst.imm;
+                    if_id.isNext = 0;
                 }
-                else pc = pc + 4;
+                //else pc = id_ex.NPC + 4;
                 break;
             }
             case BLTU:{
-                unsigned u_rs1 = Reg[in.rs1];
-                unsigned u_rs2 = Reg[in.rs2];
-                if(u_rs1 < u_rs2) {
-                    pc = pc + in.imm;
+                unsigned u_rs1 = Reg[id_ex.inst.rs1];
+                unsigned u_rs2 = Reg[id_ex.inst.rs2];
+                bool willJump = u_rs1 < u_rs2;
+                if(willJump) {
+                    pc = id_ex.NPC + id_ex.inst.imm;
+                    if_id.isNext = 0;
                 }
-                else pc = pc + 4;
+                //else pc = id_ex.NPC + 4;
                 break;
             }
             case BGEU:{
-                unsigned u_rs1 = Reg[in.rs1];
-                unsigned u_rs2 = Reg[in.rs2];
-                if(u_rs1 >= u_rs2) {
-                    pc = pc + in.imm;
+                unsigned u_rs1 = Reg[id_ex.inst.rs1];
+                unsigned u_rs2 = Reg[id_ex.inst.rs2];
+                bool willJump = u_rs1 >= u_rs2;
+                if(willJump) {
+                    pc = id_ex.NPC + id_ex.inst.imm;
+                    if_id.isNext = 0;
                 }
-                else pc = pc + 4;
+                //else pc = id_ex.NPC + 4;
+            }
+            default:
+                break;
+        }
+    }
+
+    void CALC_inst(IF_ID &if_id, ID_EX &id_ex, EX_MEM &ex_mem){
+        int check = 1;
+        switch(id_ex.inst.inst){
+            case LUI:   {
+                ex_mem.ALUOutput = id_ex.inst.imm;
+                break;
+            }
+            case AUIPC: {
+                if_id.isNext = 0;
+                pc = id_ex.NPC + id_ex.inst.imm;
+                ex_mem.ALUOutput = id_ex.NPC + id_ex.inst.imm;
+                break;
+            }
+            case ADDI:{
+                ex_mem.ALUOutput = id_ex.reg_rs1 + id_ex.inst.imm;
+                break;
+            }
+            case SLTI:{
+                ex_mem.ALUOutput = id_ex.reg_rs1 < id_ex.inst.imm;
+                break;
+            }
+            case SLTIU:{
+                unsigned imm = id_ex.inst.imm;
+                unsigned tmp = Reg[id_ex.inst.rs2];
+                ex_mem.ALUOutput = (tmp < imm);
+                break;
+            }
+            case XORI:{
+                ex_mem.ALUOutput = id_ex.reg_rs1 ^ id_ex.inst.imm;
+                break;
+            }
+            case ORI:{
+                ex_mem.ALUOutput = id_ex.reg_rs1 | id_ex.inst.imm;
+                break;
+            }
+            case ANDI:{
+                ex_mem.ALUOutput = id_ex.reg_rs1 & id_ex.inst.imm;
+                break;
+            }
+            case SLLI:{
+                unsigned imm = id_ex.inst.imm;
+                ex_mem.ALUOutput = id_ex.reg_rs1 << (int)((imm<<27)>>27);
+                break;
+            }
+            case SRLI:{
+                unsigned imm = id_ex.inst.imm;
+                unsigned u_rs1 = id_ex.reg_rs1;
+                ex_mem.ALUOutput = u_rs1 >> (int)((imm<<27)>>27);
+                break;
+            }
+            case SRAI:{
+                unsigned imm = id_ex.inst.imm;
+                ex_mem.ALUOutput = id_ex.reg_rs1 >> (int)((imm<<27)>>27);
+                break;
+            }
+            case ADD:{
+                ex_mem.ALUOutput = id_ex.reg_rs1 + id_ex.reg_rs2;
+                break;
+            }
+            case SUB:{
+                ex_mem.ALUOutput = id_ex.reg_rs1 - id_ex.reg_rs2;
+                break;
+            }
+            case SLL:{
+                ex_mem.ALUOutput = id_ex.reg_rs1 << id_ex.reg_rs2;
+                break;
+            }
+            case SLT:{
+                ex_mem.ALUOutput = id_ex.reg_rs1 < id_ex.reg_rs2;
+                break;
+            }
+            case SLTU:{
+                unsigned u_rs1 = id_ex.reg_rs1;
+                unsigned u_rs2 = id_ex.reg_rs2;
+                ex_mem.ALUOutput = u_rs1 < u_rs2;
+                break;
+            }
+            case XOR:{
+                ex_mem.ALUOutput = id_ex.reg_rs1 ^ id_ex.reg_rs2;
+                break;
+            }
+            case SRL:{
+                unsigned u_rs1 = id_ex.reg_rs1;
+                unsigned u_rs2 = id_ex.reg_rs2;
+                ex_mem.ALUOutput = u_rs1 >> u_rs2;
+                break;
+            }
+            case SRA:{
+                ex_mem.ALUOutput = id_ex.reg_rs1 >> id_ex.reg_rs2;
+                break;
+            }
+            case OR:{
+                ex_mem.ALUOutput = id_ex.reg_rs1 | id_ex.reg_rs2;
+                break;
+            }
+            case AND:{
+                ex_mem.ALUOutput = id_ex.reg_rs1 & id_ex.reg_rs2;
+                break;
+            }
+            default:check = 0;
+                break;
+        }
+        if(check == 1) ex_mem.inst.rd = id_ex.inst.rd;
+    }
+
+    void L_S_inst(IF_ID &if_id, ID_EX &id_ex, EX_MEM &ex_mem){
+        switch(id_ex.inst.inst) {
+            case LB:
+            case LH:
+            case LW:
+            case LBU:
+            case LHU:
+            {
+                ex_mem.inst.rd = id_ex.inst.rd;
+                ex_mem.ALUOutput = id_ex.reg_rs1 + id_ex.inst.imm;
+                break;
+            }
+            case SB:
+            case SH:
+            case SW:
+            {
+                ex_mem.inst.rd = id_ex.inst.rd;
+                ex_mem.reg_rs2 = id_ex.reg_rs2;
+                ex_mem.ALUOutput = id_ex.reg_rs1 + id_ex.inst.imm;
                 break;
             }
             default:
@@ -77,106 +220,19 @@ public:
         }
     }
 
-    void CALC_inst(){
-        int check = 1;
-        switch(in.inst){
-            case LUI:   Reg[in.rd] = in.imm;break;
-            case AUIPC: Reg[in.rd] = pc + in.imm;break;
-            case ADDI:{
-                Reg[in.rd] = Reg[in.rs1] + in.imm;
-                break;
-            }
-            case SLTI:{
-                Reg[in.rd] = Reg[in.rs1] < in.imm;
-                break;
-            }
-            case SLTIU:{
-                unsigned imm = in.imm;
-                unsigned tmp = Reg[in.rs2];
-                Reg[in.rd] = (tmp < imm);
-                break;
-            }
-            case XORI:{
-                Reg[in.rd] = Reg[in.rs1] ^ in.imm;
-                break;
-            }
-            case ORI:{
-                Reg[in.rd] = Reg[in.rs1] | in.imm;
-                break;
-            }
-            case ANDI:{
-                Reg[in.rd] = Reg[in.rs1] & in.imm;
-                break;
-            }
-            case SLLI:{
-                unsigned imm = in.imm;
-                Reg[in.rd] = Reg[in.rs1] << (int)((imm<<27)>>27);
-                break;
-            }
-            case SRLI:{
-                unsigned imm = in.imm;
-                unsigned u_rs1 = Reg[in.rs1];
-                Reg[in.rd] = u_rs1 >> (int)((imm<<27)>>27);
-                break;
-            }
-            case SRAI:{
-                unsigned imm = in.imm;
-                Reg[in.rd] = Reg[in.rs1] >> (int)((imm<<27)>>27);
-                break;
-            }
-            case ADD:{
-                Reg[in.rd] = Reg[in.rs1] + Reg[in.rs2];
-                break;
-            }
-            case SUB:{
-                Reg[in.rd] = Reg[in.rs1] - Reg[in.rs2];
-                break;
-            }
-            case SLL:{
-                Reg[in.rd] = Reg[in.rs1] << Reg[in.rs2];
-                break;
-            }
-            case SLT:{
-                Reg[in.rd] = Reg[in.rs1] < Reg[in.rs2];
-                break;
-            }
-            case SLTU:{
-                unsigned u_rs1 = Reg[in.rs1];
-                unsigned u_rs2 = Reg[in.rs2];
-                Reg[in.rd] = u_rs1 < u_rs2;
-                break;
-            }
-            case XOR:{
-                Reg[in.rd] = Reg[in.rs1] ^ Reg[in.rs2];
-                break;
-            }
-            case SRL:{
-                unsigned u_rs1 = Reg[in.rs1];
-                unsigned u_rs2 = Reg[in.rs2];
-                Reg[in.rd] = u_rs1 >> u_rs2;
-                break;
-            }
-            case SRA:{
-                Reg[in.rd] = Reg[in.rs1] >> Reg[in.rs2];
-                break;
-            }
-            case OR:{
-                Reg[in.rd] = Reg[in.rs1] | Reg[in.rs2];
-                break;
-            }
-            case AND:{
-                Reg[in.rd] = Reg[in.rs1] & Reg[in.rs2];
-                break;
-            }
-            default: check = 0;
-        }
-        if(check) pc = pc + 4;
+    void exe(IF_ID &if_id, ID_EX &id_ex, EX_MEM &ex_mem){
+        if(!id_ex.isNext || !id_ex.avail || !ex_mem.free) return;
+        //std::cout<<"exe "<<dec<<id_ex.inst.inst_32<<endl;
+        ex_mem.inst.inst = id_ex.inst.inst;
+        ex_mem.inst.type = id_ex.inst.type;
+        ex_mem.inst.inst_32 = id_ex.inst.inst_32;
+        JUMP_inst(if_id, id_ex, ex_mem);
+        CALC_inst(if_id, id_ex, ex_mem);
+        L_S_inst(if_id, id_ex, ex_mem);
+        id_ex.isNext = 0;
+        ex_mem.isNext = 1;
     }
 
-    void exe(){
-        JUMP_inst();
-        CALC_inst();
-    }
 };
 
 #endif //RISCV_EXECUTE_HPP

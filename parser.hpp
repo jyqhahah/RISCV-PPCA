@@ -50,6 +50,7 @@ namespace SJTU_JYQ{
     };
     struct instruction{
         INST inst;
+        unsigned int inst_32;
         InstType type;
         int imm;
         int rs1;
@@ -60,5 +61,27 @@ namespace SJTU_JYQ{
     };
     unsigned char mem[0x20100];
     int Reg[32],pc = 0x00000000;
+    struct IF_ID{
+        instruction inst;
+        int NPC;
+        int avail, isNext, free;
+    };
+    struct ID_EX{
+        instruction inst;
+        int NPC;
+        int avail, isNext, free;
+        int reg_rs1, reg_rs2;
+    };
+    struct EX_MEM{
+        instruction inst;
+        int avail, isNext, free;
+        int ALUOutput;
+        int reg_rs2;
+    };
+    struct MEM_WB{
+        instruction inst;
+        int ALUOutput;
+        int avail, isNext;
+    };
 }
 #endif //RISCV_PARSER_HPP
