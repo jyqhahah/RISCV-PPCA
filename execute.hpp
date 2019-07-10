@@ -12,7 +12,7 @@ using namespace SJTU_JYQ;
 class execute{
 public:
     void JUMP_inst(IF_ID &if_id, ID_EX &id_ex, EX_MEM &ex_mem, predict &predictor){
-        bool predict_result = predictor.getPredict(id_ex.inst.inst), willJump;
+        bool predict_result = predictor.getPredict(id_ex.inst.inst_32), willJump;
         switch(id_ex.inst.inst){
             case BEQ: {
                 willJump = id_ex.reg_rs1 == id_ex.reg_rs2;
@@ -105,7 +105,7 @@ public:
             default:
                 return;
         }
-        predictor.updateTable(willJump, id_ex.NPC + id_ex.inst.imm, id_ex.inst.inst);
+        predictor.updateTable(willJump, id_ex.NPC + id_ex.inst.imm, id_ex.inst.inst_32);
     }
 
     void CALC_inst(IF_ID &if_id, ID_EX &id_ex, EX_MEM &ex_mem){

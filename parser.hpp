@@ -90,7 +90,7 @@ namespace SJTU_JYQ{
     struct predictor{
         bool pred1, pred2;
     };
-    predictor caseTable[15];
+    predictor caseTable[20];
 }
 using namespace SJTU_JYQ;
 #include <cstring>
@@ -99,16 +99,18 @@ public:
     predict(){
         memset(caseTable, 0, sizeof(caseTable));
     }
-    bool getPredict(INST _inst){
-        predictor pred = caseTable[_inst];
+    bool getPredict(uint32_t _inst){
+        int _pc = (_inst>>2) & 0xf;
+        predictor pred = caseTable[_pc];
         if(pred.pred1 &&pred.pred2)   return true;
         if(!pred.pred1&&pred.pred2)   return false;
         if(!pred.pred1&&!pred.pred2)  return true;
         if(pred.pred1 &&!pred.pred2)  return false;
     }
 
-    void updateTable(bool predCorrect, int addr, INST _inst){
-        predictor pred = caseTable[_inst];
+    void updateTable(bool predCorrect, int addr, uint32_t _inst){
+        int _pc = (_inst>>3) & 0xf;
+        predictor pred = caseTable[_pc];
         if(predCorrect){
             if(!pred.pred1&&pred.pred2)  pred.pred1 = true;
             if(!pred.pred1&&!pred.pred2) pred.pred2 = true;
@@ -119,7 +121,7 @@ public:
             if(!pred.pred1&&pred.pred2)  pred.pred2 = false;
             if(pred.pred1 &&!pred.pred2) pred.pred1 = false;
         }
-        caseTable[_inst] = pred;
+        caseTable[_pc] = pred;
     }
 };
 #endif //RISCV_PARSER_HPP

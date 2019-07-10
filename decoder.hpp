@@ -158,7 +158,6 @@ public:
             pause = false;
         }
         if(!if_id.isNext || !id_ex.avail || !id_ex.free) return;
-        //std::cout<<"decoder "<<std::dec<<if_id.inst.inst_32<<std::endl;
         if_id.isNext = 0;
         uint32_t _inst = if_id.inst.inst_32;
         instruction tmp;
@@ -221,7 +220,7 @@ public:
                 id_ex.reg_rs2 = Reg[id_ex.inst.rs2];
                 if_id.avail = id_ex.avail = 1;
                 pause = false;
-                if(predictor.getPredict(id_ex.inst.inst)){
+                if(predictor.getPredict(id_ex.inst.inst_32)){
                     if_id.predJump = true;
                     if_id.jump_pc = id_ex.NPC + id_ex.inst.imm;
                 }

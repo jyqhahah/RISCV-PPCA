@@ -31,7 +31,7 @@ public:
     void fetch(IF_ID &if_id) {
         if(!if_id.free||!if_id.avail) return;
         uint32_t code;
-        if(!if_id.jump_pc) {
+        if(!if_id.predJump) {
             memcpy(&code, mem + pc, 4);
             if_id.NPC = pc;
             if_id.isNext = 1;

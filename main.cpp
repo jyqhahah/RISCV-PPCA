@@ -8,7 +8,7 @@
 
 using namespace std;
 int main() {
-    //freopen("pi.data", "r", stdin);
+    //freopen("basicopt1.data", "r", stdin);
     read _read;
     memset(mem, 0, sizeof(mem));
     _read.Read();
@@ -18,8 +18,8 @@ int main() {
     writeBack _write;
     predict predictor;
     Reg[0] = 0;
-    IF_ID if_id;if_id.avail = if_id.free = 1;if_id.isNext = 0;
-    ID_EX id_ex;id_ex.avail = id_ex.free = 1;id_ex.isNext = 0;
+    IF_ID if_id;if_id.avail = if_id.free = 1;if_id.isNext = 0;if_id.predJump = false;if_id.jump_pc = 0;
+    ID_EX id_ex;id_ex.avail = id_ex.free = 1;id_ex.isNext = 0;id_ex.predJump = false;id_ex.jump_pc = 0;
     EX_MEM ex_mem;ex_mem.avail = ex_mem.free = 1;ex_mem.isNext = 0;
     MEM_WB mem_wb;mem_wb.avail = mem_wb.free = 1;mem_wb.isNext = 0;
     while(if_id.inst.inst_32 != 0x00c68223){
