@@ -8,6 +8,7 @@
 
 using namespace std;
 int main() {
+    //freopen("pi.data", "r", stdin);
     read _read;
     memset(mem, 0, sizeof(mem));
     _read.Read();
@@ -15,6 +16,7 @@ int main() {
     execute _exe;
     memory _mem;
     writeBack _write;
+    predict predictor;
     Reg[0] = 0;
     IF_ID if_id;if_id.avail = if_id.free = 1;if_id.isNext = 0;
     ID_EX id_ex;id_ex.avail = id_ex.free = 1;id_ex.isNext = 0;
@@ -25,9 +27,9 @@ int main() {
         Reg[0] = 0;
         _mem.memo(if_id, id_ex, ex_mem, mem_wb);
         Reg[0] = 0;
-        _exe.exe(if_id, id_ex, ex_mem);
+        _exe.exe(if_id, id_ex, ex_mem, predictor);
         Reg[0] = 0;
-        _dec.decode(if_id, id_ex, ex_mem, mem_wb);
+        _dec.decode(if_id, id_ex, ex_mem, mem_wb, predictor);
         Reg[0] = 0;
         _read.fetch(if_id);
         Reg[0] = 0;
@@ -37,7 +39,7 @@ int main() {
         Reg[0] = 0;
         _mem.memo(if_id, id_ex, ex_mem, mem_wb);
         Reg[0] = 0;
-        _exe.exe(if_id, id_ex, ex_mem);
+        _exe.exe(if_id, id_ex, ex_mem, predictor);
         Reg[0] = 0;
     }
     std::cout<<dec<<(Reg[10]&0xff)<<std::endl;

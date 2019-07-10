@@ -43,6 +43,8 @@ cstring
 -
 
 /home/jiayuqi/CLionProjects/RISCV/parser.hpp
+cstring
+-
 
 /home/jiayuqi/CLionProjects/RISCV/read.hpp
 cstdio

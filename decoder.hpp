@@ -150,7 +150,7 @@ public:
         }
     }
 
-    void decode(IF_ID &if_id, ID_EX &id_ex, EX_MEM &ex_mem, MEM_WB &mem_wb){
+    void decode(IF_ID &if_id, ID_EX &id_ex, EX_MEM &ex_mem, MEM_WB &mem_wb, predict &predictor){
         static bool pause = false;
         if(pause && !ex_mem.isNext && !mem_wb.isNext){
             if_id.avail = if_id.isNext = 1;
@@ -221,6 +221,14 @@ public:
                 id_ex.reg_rs2 = Reg[id_ex.inst.rs2];
                 if_id.avail = id_ex.avail = 1;
                 pause = false;
+                if(predictor.getPredict(id_ex.inst.inst)){
+                    if_id.predJump = true;
+                    if_id.jump_pc = id_ex.NPC + id_ex.inst.imm;
+                }
+                else{
+                    if_id.predJump = false;
+                    if_id.jump_pc = 0;
+                }
                 break;
             }
             default:{

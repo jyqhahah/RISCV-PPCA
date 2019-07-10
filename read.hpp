@@ -31,11 +31,22 @@ public:
     void fetch(IF_ID &if_id) {
         if(!if_id.free||!if_id.avail) return;
         uint32_t code;
-        memcpy(&code, mem + pc, 4);
-        if_id.NPC = pc;
-        if_id.isNext = 1;
-        if_id.inst.inst_32 = code;
-        pc += 4;
+        if(!if_id.jump_pc) {
+            memcpy(&code, mem + pc, 4);
+            if_id.NPC = pc;
+            if_id.isNext = 1;
+            if_id.inst.inst_32 = code;
+            pc += 4;
+        }
+        else{
+            memcpy(&code, mem + if_id.jump_pc, 4);
+            if_id.NPC = if_id.jump_pc;
+            if_id.isNext = 1;
+            if_id.inst.inst_32 = code;
+            pc = if_id.jump_pc + 4;
+            if_id.predJump = false;
+            if_id.jump_pc = 0;
+        }
     }
 };
 #endif //RISCV_READ_HPP

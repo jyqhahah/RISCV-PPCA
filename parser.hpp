@@ -65,12 +65,16 @@ namespace SJTU_JYQ{
         instruction inst;
         int NPC;
         int avail, isNext, free;
+        bool predJump;
+        int jump_pc;
     };
     struct ID_EX{
         instruction inst;
         int NPC;
         int avail, isNext, free;
         int reg_rs1, reg_rs2;
+        bool predJump;
+        int jump_pc;
     };
     struct EX_MEM{
         instruction inst;
@@ -83,5 +87,39 @@ namespace SJTU_JYQ{
         int ALUOutput;
         int avail, isNext, free;
     };
+    struct predictor{
+        bool pred1, pred2;
+    };
+    predictor caseTable[15];
 }
+using namespace SJTU_JYQ;
+#include <cstring>
+class predict{
+public:
+    predict(){
+        memset(caseTable, 0, sizeof(caseTable));
+    }
+    bool getPredict(INST _inst){
+        predictor pred = caseTable[_inst];
+        if(pred.pred1 &&pred.pred2)   return true;
+        if(!pred.pred1&&pred.pred2)   return false;
+        if(!pred.pred1&&!pred.pred2)  return true;
+        if(pred.pred1 &&!pred.pred2)  return false;
+    }
+
+    void updateTable(bool predCorrect, int addr, INST _inst){
+        predictor pred = caseTable[_inst];
+        if(predCorrect){
+            if(!pred.pred1&&pred.pred2)  pred.pred1 = true;
+            if(!pred.pred1&&!pred.pred2) pred.pred2 = true;
+            if(pred.pred1 &&!pred.pred2) pred.pred2 = true;
+        }
+        else{
+            if(pred.pred1&&pred.pred2)   pred.pred2 = false;
+            if(!pred.pred1&&pred.pred2)  pred.pred2 = false;
+            if(pred.pred1 &&!pred.pred2) pred.pred1 = false;
+        }
+        caseTable[_inst] = pred;
+    }
+};
 #endif //RISCV_PARSER_HPP
